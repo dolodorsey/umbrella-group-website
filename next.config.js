@@ -3,7 +3,6 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'dzlmtvodpyhetvektfuo.supabase.co' },
-      { protocol: 'https', hostname: '**.vercel.app' },
     ],
   },
 };
