@@ -16,8 +16,11 @@ export const metadata = {
     description: 'Full-service solutions under one roof.',
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.svg',
   },
+};
+
+export const viewport = {
   themeColor: '#14161B',
 };
 
