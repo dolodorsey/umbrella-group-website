@@ -11,7 +11,7 @@ export default function Home() {
   const refs = useRef([]);
   const addR = (el) => { if (el && !refs.current.includes(el)) refs.current.push(el); };
 
-  useEffect(() => { setTimeout(() => setLd(true), 2200); }, []);
+  useEffect(() => { const timer = setTimeout(() => setLd(true), 500); return () => clearTimeout(timer); }, []);
   useEffect(() => {
     const h = () => setSc(window.scrollY > 60);
     window.addEventListener('scroll', h, { passive: true });
@@ -28,24 +28,24 @@ export default function Home() {
   return (<>
     {/* ── PRELOADER WITH LOGO ── */}
     <div style={{position:'fixed',top:0,left:0,width:'100%',height:'100%',background:'#14161B',zIndex:10000,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',opacity:ld?0:1,visibility:ld?'hidden':'visible',transition:'opacity 1s cubic-bezier(0.16,1,0.3,1),visibility 1s'}}>
-      <img src="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/dr_dorsey/01_logos/KOLLECTIVEemblemW.png" alt="" style={{width:120,objectFit:'contain',marginBottom:16,animation:'pulse 2s ease-in-out infinite'}} />
-      <div style={{fontFamily:'DM Mono,monospace',fontSize:'9px',letterSpacing:'0.3em',textTransform:'uppercase',color:'#B4975A',opacity:0.6}}>The Kollective Hospitality Group</div>
+      <img src="/brand/umbrella-logo.png" alt="The Umbrella Group" style={{width:210,objectFit:'contain',marginBottom:16,animation:'pulse 2s ease-in-out infinite'}} />
+      <div style={{fontFamily:'DM Mono,monospace',fontSize:'9px',letterSpacing:'0.3em',textTransform:'uppercase',color:'#B4975A',opacity:0.6}}>Services under one roof</div>
     </div>
 
     {/* ── MOBILE NAV ── */}
     <div style={{position:'fixed',top:0,right:mo?'0':'-100%',width:'100%',height:'100%',background:'#14161B',zIndex:999,display:'flex',flexDirection:'column',justifyContent:'center',padding:'96px clamp(20px,4vw,80px)',transition:'right 0.6s cubic-bezier(0.16,1,0.3,1)'}}>
-      {['services','about','connect'].map(s => <a key={s} href={`#${s}`} onClick={() => setMo(false)} style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(28px,5vw,56px)',fontWeight:300,textDecoration:'none',display:'block',padding:'14px 0',borderBottom:'1px solid rgba(247,247,244,0.06)',color:'#F7F7F4'}}>{s.charAt(0).toUpperCase()+s.slice(1)}</a>)}
+      {[['Services','/services'],['About','/about'],['Partners','/partners'],['Connect','/connect']].map(([label,href]) => <a key={href} href={href} onClick={() => setMo(false)} style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(28px,5vw,56px)',fontWeight:300,textDecoration:'none',display:'block',padding:'14px 0',borderBottom:'1px solid rgba(247,247,244,0.06)',color:'#F7F7F4'}}>{label}</a>)}
     </div>
 
     {/* ── NAV WITH LOGO ── */}
     <nav style={{position:'fixed',top:0,left:0,width:'100%',zIndex:1000,padding:'20px clamp(20px,4vw,80px)',display:'flex',alignItems:'center',justifyContent:'space-between',background:sc?'rgba(10,10,14,0.92)':'transparent',backdropFilter:sc?'blur(16px)':'none',transition:'background 0.4s'}}>
       <a href="#" style={{display:'flex',alignItems:'center',gap:12,textDecoration:'none'}}>
-        <img src="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/dr_dorsey/01_logos/KOLLECTIVEemblemW.png" alt="" style={{height:28,objectFit:'contain'}} />
+        <img src="/brand/umbrella-logo.png" alt="The Umbrella Group" style={{height:48,width:150,objectFit:'contain'}} />
       </a>
       <ul className="desk-nav" style={{display:'flex',gap:36,listStyle:'none',margin:0,padding:0}}>
-        {['services','about','connect'].map(s => <li key={s}><a href={`#${s}`} className="na" style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(8px,0.7vw,10px)',letterSpacing:'0.15em',textTransform:'uppercase',color:'rgba(247,247,244,0.5)',textDecoration:'none'}}>{s}</a></li>)}
+        {[['services','/services'],['about','/about'],['partners','/partners'],['connect','/connect']].map(([label,href]) => <li key={href}><a href={href} className="na" style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(8px,0.7vw,10px)',letterSpacing:'0.15em',textTransform:'uppercase',color:'rgba(247,247,244,0.5)',textDecoration:'none'}}>{label}</a></li>)}
       </ul>
-      <a href="#connect" className="desk-cta" style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(7px,0.65vw,9px)',letterSpacing:'0.2em',textTransform:'uppercase',color:'#14161B',background:'#B4975A',padding:'9px 22px',textDecoration:'none'}}>Get Started</a>
+      <a href="/connect" className="desk-cta" style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(7px,0.65vw,9px)',letterSpacing:'0.2em',textTransform:'uppercase',color:'#14161B',background:'#B4975A',padding:'9px 22px',textDecoration:'none'}}>Get Started</a>
       <button className="mob-btn" onClick={() => setMo(!mo)} style={{display:'none',background:'none',border:'none',cursor:'pointer',width:26,height:18,position:'relative'}}>
         <span style={{display:'block',width:'100%',height:'1px',background:'#F7F7F4',position:'absolute',left:0,top:mo?8:2,transition:'all 0.3s',transform:mo?'rotate(45deg)':'none'}} />
         <span style={{display:'block',width:'100%',height:'1px',background:'#F7F7F4',position:'absolute',left:0,top:8,transition:'all 0.3s',opacity:mo?0:1}} />
@@ -63,10 +63,10 @@ export default function Home() {
         <div style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',zIndex:3,opacity:0.04,backgroundImage:'url("data:image/svg+xml,%3Csvg viewBox=%270 0 256 256%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.9%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E")'}} />
       </div>
       <div style={{position:'relative',zIndex:4,maxWidth:620,padding:'0 clamp(20px,4vw,80px)'}}>
-        <div style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(8px,0.7vw,10px)',letterSpacing:'0.35em',textTransform:'uppercase',color:'#B4975A',marginBottom:20,animation:'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 2.2s both'}}>Umbrella Group × The Kollective</div>
-        <h1 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(36px,7vw,90px)',fontWeight:300,lineHeight:1.08,letterSpacing:'-0.02em',color:'#F7F7F4',margin:0,animation:'fadeUp 1s cubic-bezier(0.16,1,0.3,1) 2.4s both'}}>Ventures that<br />move culture<br /><em style={{fontStyle:'italic',color:'#3B536B'}}>forward.</em></h1>
-        <p style={{fontSize:'clamp(13px,1.2vw,16px)',color:'rgba(247,247,244,0.45)',lineHeight:1.7,maxWidth:440,marginTop:24,animation:'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 2.6s both'}}>A full-service holding company under The Kollective — orchestrating ventures across auto, injury, realty, cleaning, and more.</p>
-        <a href="#services" style={{display:'inline-block',fontFamily:'DM Mono,monospace',fontSize:'clamp(8px,0.7vw,10px)',letterSpacing:'0.25em',textTransform:'uppercase',color:'#14161B',background:'#B4975A',padding:'14px 40px',textDecoration:'none',marginTop:40,animation:'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 2.8s both'}}>Explore</a>
+        <div style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(8px,0.7vw,10px)',letterSpacing:'0.35em',textTransform:'uppercase',color:'#B4975A',marginBottom:20,animation:'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) .45s both'}}>Umbrella Group × The Kollective</div>
+        <h1 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(36px,7vw,90px)',fontWeight:300,lineHeight:1.08,letterSpacing:'-0.02em',color:'#F7F7F4',margin:0,animation:'fadeUp 1s cubic-bezier(0.16,1,0.3,1) .6s both'}}>Ventures that<br />move culture<br /><em style={{fontStyle:'italic',color:'#3B536B'}}>forward.</em></h1>
+        <p style={{fontSize:'clamp(13px,1.2vw,16px)',color:'rgba(247,247,244,0.45)',lineHeight:1.7,maxWidth:440,marginTop:24,animation:'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) .75s both'}}>A full-service holding company under The Kollective — orchestrating ventures across auto, injury, realty, cleaning, and more.</p>
+        <a href="/services" style={{display:'inline-block',fontFamily:'DM Mono,monospace',fontSize:'clamp(8px,0.7vw,10px)',letterSpacing:'0.25em',textTransform:'uppercase',color:'#14161B',background:'#B4975A',padding:'14px 40px',textDecoration:'none',marginTop:40,animation:'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) .9s both'}}>Explore services</a>
       </div>
       <div style={{position:'absolute',bottom:0,left:0,width:'100%',height:'2px',background:'linear-gradient(90deg,transparent,#B4975A,transparent)',zIndex:4,opacity:0.4}} />
     </section>
@@ -136,7 +136,7 @@ export default function Home() {
       </div>
       <div style={{maxWidth:900,margin:'0 auto',textAlign:'center',position:'relative',zIndex:1}}>
         <div ref={addR} style={{opacity:0,transform:'translateY(35px)',transition:'opacity 0.8s cubic-bezier(0.16,1,0.3,1),transform 0.8s cubic-bezier(0.16,1,0.3,1)'}}>
-          <img src="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/dr_dorsey/01_logos/KOLLECTIVEemblemW.png" alt="" style={{width:80,objectFit:'contain',margin:'0 auto 24px',display:'block',opacity:0.6}} />
+          <img src="/brand/umbrella-logo.png" alt="The Umbrella Group" style={{width:220,objectFit:'contain',margin:'0 auto 24px',display:'block'}} />
           <h2 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(28px,5vw,64px)',fontWeight:300,lineHeight:1.1,color:'#F7F7F4',marginBottom:24}}>{"Let's"} <em style={{fontStyle:'italic',color:'#3B536B'}}>connect.</em></h2>
           <p style={{fontSize:'clamp(14px,1.3vw,18px)',color:'rgba(247,247,244,0.45)',lineHeight:1.7,maxWidth:560,margin:'0 auto 48px'}}>A full-service holding company under The Kollective — orchestrating ventures across auto, injury, realty, cleaning, and more.</p>
           <div style={{display:'flex',gap:20,justifyContent:'center',flexWrap:'wrap',marginBottom:56}}>
@@ -160,7 +160,7 @@ export default function Home() {
     {/* ── FOOTER ── */}
     <footer className="ftr" style={{padding:'40px clamp(20px,4vw,80px)',borderTop:'1px solid rgba(247,247,244,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',background:'#14161B'}}>
       <div style={{display:'flex',alignItems:'center',gap:12}}>
-        <img src="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/dr_dorsey/01_logos/KOLLECTIVEemblemW.png" alt="" style={{height:20,objectFit:'contain',opacity:0.4}} />
+        <img src="/brand/umbrella-logo.png" alt="" style={{height:42,width:120,objectFit:'contain',opacity:0.75}} />
         <div style={{fontFamily:'DM Mono,monospace',fontSize:'clamp(7px,0.65vw,9px)',letterSpacing:'0.2em',color:'rgba(247,247,244,0.3)'}}>© 2026 Umbrella Group</div>
       </div>
       <div style={{display:'flex',gap:24}}>
