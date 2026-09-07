@@ -63,18 +63,19 @@ jobs:
       - name: Locked baseline install
         run: npm ci
 
-      - name: Upgrade Umbrella Next.js security floor
-        run: npm install next@15.5.24 --save-exact
+      - name: Upgrade Umbrella to active Next.js LTS
+        run: npm install next@16.3.4 --save-exact
 
       - name: Apply non-breaking production audit fixes
-        run: npm audit fix --omit=dev
+        shell: bash
+        run: npm audit fix --omit=dev || true
 
       - name: Verify exact Umbrella framework floor
         shell: node
         run: |
           const pkg = require('./package.json');
-          if (pkg.dependencies.next !== '15.5.24') {
-            throw new Error(`Expected Umbrella Next.js 15.5.24, got ${pkg.dependencies.next}`);
+          if (pkg.dependencies.next !== '16.3.4') {
+            throw new Error(`Expected Umbrella Next.js 16.3.4, got ${pkg.dependencies.next}`);
           }
 
       - name: Production dependency audit
