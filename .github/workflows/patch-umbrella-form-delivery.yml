@@ -1,0 +1,76 @@
+name: Umbrella Group Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.js'
+      - '.github/workflows/patch-umbrella-form-delivery.yml'
+  push:
+    branches:
+      - main
+      - agent/umbrella-form-delivery-integrity
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Locked install
+        run: npm ci
+
+      - name: Verify Umbrella intake delivery contract
+        shell: python
+        run: |
+          from pathlib import Path
+          source = Path('src/app/forms/[type]/page.jsx').read_text()
+          required = [
+              "const BRAND_KEY = 'umbrella_group'",
+              "const WEBHOOK = 'https://dorsey.app.n8n.cloud/webhook/khg-form-submit'",
+              'const controller=new AbortController()',
+              'setTimeout(()=>controller.abort(),8000)',
+              'signal:controller.signal',
+              'if(!response.ok)',
+              "setStatus('error')",
+              'clearTimeout(timeout)',
+          ]
+          missing = [item for item in required if item not in source]
+          if missing:
+              raise SystemExit(f'Missing Umbrella intake controls: {missing}')
+          if "try{await fetch(WEBHOOK" in source:
+              raise SystemExit('Legacy false-success submit path is present')
+
+      - name: Verify Umbrella framework security floor
+        shell: bash
+        run: |
+          node <<'NODE'
+          const pkg = require('./package.json');
+          const raw = String(pkg.dependencies.next || '');
+          const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
+          if (!match) throw new Error(`Cannot parse Umbrella Next.js version: ${raw}`);
+          const major = Number(match[1]);
+          const minor = Number(match[2]);
+          const patch = Number(match[3]);
+          const ok = major === 16 && (minor > 3 || (minor === 3 && patch >= 4));
+          if (!ok) throw new Error(`Umbrella Next.js must be >=16.3.4 on the 16.x LTS line; got ${raw}`);
+          console.log(`Umbrella Next.js security floor satisfied: ${raw}`);
+          NODE
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Production build
+        run: npm run build
