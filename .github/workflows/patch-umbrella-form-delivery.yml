@@ -71,15 +71,20 @@ jobs:
         run: npm audit fix --omit=dev || true
 
       - name: Verify Umbrella framework security floor
-        shell: node
+        shell: bash
         run: |
+          node <<'NODE'
           const pkg = require('./package.json');
           const raw = String(pkg.dependencies.next || '');
           const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
           if (!match) throw new Error(`Cannot parse Umbrella Next.js version: ${raw}`);
-          const [, major, minor, patch] = match.map(Number);
+          const major = Number(match[1]);
+          const minor = Number(match[2]);
+          const patch = Number(match[3]);
           const ok = major === 16 && (minor > 3 || (minor === 3 && patch >= 4));
           if (!ok) throw new Error(`Umbrella Next.js must be >=16.3.4 on the 16.x LTS line; got ${raw}`);
+          console.log(`Umbrella Next.js security floor satisfied: ${raw}`);
+          NODE
 
       - name: Production dependency audit
         run: npm audit --omit=dev --audit-level=high
