@@ -1,39 +1,38 @@
-name: Patch Umbrella Form Delivery Integrity
+name: Umbrella Group Quality Gate
 
 on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.js'
+      - '.github/workflows/patch-umbrella-form-delivery.yml'
   push:
     branches:
+      - main
       - agent/umbrella-form-delivery-integrity
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch-and-verify:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
+      - name: Checkout exact candidate
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          ref: agent/umbrella-form-delivery-integrity
-          fetch-depth: 0
+          node-version: 24
+          cache: npm
 
-      - name: Patch false-success form delivery path
-        shell: python
-        run: |
-          from pathlib import Path
+      - name: Locked install
+        run: npm ci
 
-          path = Path('src/app/forms/[type]/page.jsx')
-          source = path.read_text()
-          old = """  const submit=async(e)=>{\n    e.preventDefault();setStatus('submitting');\n    try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand_key:BRAND_KEY,form_type:type,full_name:data.full_name||'',email:data.email||'',phone:data.phone||'',form_data:data,source:'standalone_form',submitted_at:new Date().toISOString()})});setStatus('success');}catch{setStatus('error');}\n  };"""
-          new = """  const submit=async(e)=>{\n    e.preventDefault();setStatus('submitting');\n    const controller=new AbortController();\n    const timeout=setTimeout(()=>controller.abort(),8000);\n    try{\n      const response=await fetch(WEBHOOK,{\n        method:'POST',\n        headers:{'Content-Type':'application/json'},\n        signal:controller.signal,\n        body:JSON.stringify({brand_key:BRAND_KEY,form_type:type,full_name:data.full_name||'',email:data.email||'',phone:data.phone||'',form_data:data,source:'standalone_form',submitted_at:new Date().toISOString()})\n      });\n      if(!response.ok) throw new Error(`Umbrella Group form delivery failed: ${response.status}`);\n      setStatus('success');\n    }catch{\n      setStatus('error');\n    }finally{\n      clearTimeout(timeout);\n    }\n  };"""
-
-          if old in source:
-              path.write_text(source.replace(old, new, 1))
-          elif 'if(!response.ok)' not in source or 'AbortController' not in source:
-              raise SystemExit('Expected Umbrella form submit block not found; refusing unsafe patch')
-
-      - name: Verify delivery contract
+      - name: Verify Umbrella intake delivery contract
         shell: python
         run: |
           from pathlib import Path
@@ -50,25 +49,9 @@ jobs:
           ]
           missing = [item for item in required if item not in source]
           if missing:
-              raise SystemExit(f'Missing Umbrella delivery controls: {missing}')
+              raise SystemExit(f'Missing Umbrella intake controls: {missing}')
           if "try{await fetch(WEBHOOK" in source:
-              raise SystemExit('Legacy false-success submit path is still present')
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Locked baseline install
-        run: npm ci
-
-      - name: Upgrade Umbrella to active Next.js LTS
-        run: npm install next@16.3.4 --save-exact
-
-      - name: Apply non-breaking production audit fixes
-        shell: bash
-        run: npm audit fix --omit=dev || true
+              raise SystemExit('Legacy false-success submit path is present')
 
       - name: Verify Umbrella framework security floor
         shell: bash
@@ -91,16 +74,3 @@ jobs:
 
       - name: Production build
         run: npm run build
-
-      - name: Commit verified Umbrella remediation
-        shell: bash
-        run: |
-          if git diff --quiet -- 'src/app/forms/[type]/page.jsx' package.json package-lock.json; then
-            echo 'Umbrella remediation already applied.'
-            exit 0
-          fi
-          git config user.name 'kollective-enterprise-loop'
-          git config user.email 'actions@users.noreply.github.com'
-          git add 'src/app/forms/[type]/page.jsx' package.json package-lock.json
-          git commit -m 'fix: harden Umbrella intake and dependency security'
-          git push origin HEAD:agent/umbrella-form-delivery-integrity
