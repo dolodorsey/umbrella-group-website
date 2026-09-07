@@ -1,0 +1,83 @@
+name: Patch Umbrella Form Delivery Integrity
+
+on:
+  push:
+    branches:
+      - agent/umbrella-form-delivery-integrity
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/umbrella-form-delivery-integrity
+          fetch-depth: 0
+
+      - name: Patch false-success form delivery path
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/app/forms/[type]/page.jsx')
+          source = path.read_text()
+          old = """  const submit=async(e)=>{\n    e.preventDefault();setStatus('submitting');\n    try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand_key:BRAND_KEY,form_type:type,full_name:data.full_name||'',email:data.email||'',phone:data.phone||'',form_data:data,source:'standalone_form',submitted_at:new Date().toISOString()})});setStatus('success');}catch{setStatus('error');}\n  };"""
+          new = """  const submit=async(e)=>{\n    e.preventDefault();setStatus('submitting');\n    const controller=new AbortController();\n    const timeout=setTimeout(()=>controller.abort(),8000);\n    try{\n      const response=await fetch(WEBHOOK,{\n        method:'POST',\n        headers:{'Content-Type':'application/json'},\n        signal:controller.signal,\n        body:JSON.stringify({brand_key:BRAND_KEY,form_type:type,full_name:data.full_name||'',email:data.email||'',phone:data.phone||'',form_data:data,source:'standalone_form',submitted_at:new Date().toISOString()})\n      });\n      if(!response.ok) throw new Error(`Umbrella Group form delivery failed: ${response.status}`);\n      setStatus('success');\n    }catch{\n      setStatus('error');\n    }finally{\n      clearTimeout(timeout);\n    }\n  };"""
+
+          if old in source:
+              path.write_text(source.replace(old, new, 1))
+          elif 'if(!response.ok)' not in source or 'AbortController' not in source:
+              raise SystemExit('Expected Umbrella form submit block not found; refusing unsafe patch')
+
+      - name: Verify delivery contract
+        shell: python
+        run: |
+          from pathlib import Path
+          source = Path('src/app/forms/[type]/page.jsx').read_text()
+          required = [
+              "const BRAND_KEY = 'umbrella_group'",
+              "const WEBHOOK = 'https://dorsey.app.n8n.cloud/webhook/khg-form-submit'",
+              'const controller=new AbortController()',
+              'setTimeout(()=>controller.abort(),8000)',
+              'signal:controller.signal',
+              'if(!response.ok)',
+              "setStatus('error')",
+              'clearTimeout(timeout)',
+          ]
+          missing = [item for item in required if item not in source]
+          if missing:
+              raise SystemExit(f'Missing Umbrella delivery controls: {missing}')
+          if "try{await fetch(WEBHOOK" in source:
+              raise SystemExit('Legacy false-success submit path is still present')
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Locked install
+        run: npm ci
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit patch if needed
+        shell: bash
+        run: |
+          if git diff --quiet -- 'src/app/forms/[type]/page.jsx'; then
+            echo 'Umbrella form delivery integrity already applied.'
+            exit 0
+          fi
+          git config user.name 'kollective-enterprise-loop'
+          git config user.email 'actions@users.noreply.github.com'
+          git add 'src/app/forms/[type]/page.jsx'
+          git commit -m 'fix: fail closed on Umbrella form delivery errors'
+          git push origin HEAD:agent/umbrella-form-delivery-integrity
