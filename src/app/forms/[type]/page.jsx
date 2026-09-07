@@ -167,7 +167,22 @@ export default function FormPage({params}){
   const set=(n,v)=>setData(p=>({...p,[n]:v}));
   const submit=async(e)=>{
     e.preventDefault();setStatus('submitting');
-    try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand_key:BRAND_KEY,form_type:type,full_name:data.full_name||'',email:data.email||'',phone:data.phone||'',form_data:data,source:'standalone_form',submitted_at:new Date().toISOString()})});setStatus('success');}catch{setStatus('error');}
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),8000);
+    try{
+      const response=await fetch(WEBHOOK,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        signal:controller.signal,
+        body:JSON.stringify({brand_key:BRAND_KEY,form_type:type,full_name:data.full_name||'',email:data.email||'',phone:data.phone||'',form_data:data,source:'standalone_form',submitted_at:new Date().toISOString()})
+      });
+      if(!response.ok) throw new Error(`Umbrella Group form delivery failed: ${response.status}`);
+      setStatus('success');
+    }catch{
+      setStatus('error');
+    }finally{
+      clearTimeout(timeout);
+    }
   };
 
   if(!form) return <FormsIndex/>;
